@@ -1,0 +1,6 @@
+../Core/Src/ds3231.c:22:16:BCD2DEC	16	static
+../Core/Src/ds3231.c:27:16:DEC2BCD	16	static
+../Core/Src/ds3231.c:32:6:DS3231_Init	40	static
+../Core/Src/ds3231.c:42:6:DS3231_SetTime	40	static
+../Core/Src/ds3231.c:60:6:DS3231_GetTime	40	static
+../Core/Src/ds3231.c:77:7:DS3231_GetTemperature	40	static

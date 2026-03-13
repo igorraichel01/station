@@ -1,0 +1,93 @@
+#ifndef I18N_H
+#define I18N_H
+
+#include <stdint.h>
+#include "menu.h"   // Language_t (LANG_PT, LANG_ES, LANG_EN)
+
+typedef enum {
+    TXT_USB_DETECTED,
+    TXT_EXPORTING,
+    TXT_PLEASE_WAIT,
+    TXT_SUCCESS,
+    TXT_USB_ERROR,
+    TXT_NO_DATA,
+
+	TXT_BOOT_LOADING_CONFIG,
+	TXT_BOOT_MODE_FMT,
+	TXT_BOOT_INIT_RTC,
+	TXT_BOOT_RTC_OK,
+	TXT_BOOT_RTC_ERR,
+	TXT_BOOT_INIT_BMP,
+	TXT_BOOT_BMP_OK,
+	TXT_BOOT_BMP_ERR,
+	TXT_BOOT_INIT_DHT,
+	TXT_BOOT_DHT_OK,
+	TXT_BOOT_FIRST_ACQ_OK,
+
+    TXT_SYSTEM_READY,
+
+    TXT_FIRST_ACQ,
+    TXT_WAIT,
+
+    TXT_TEST_MODE_TITLE,
+    TXT_TEST_MODE_SUBTITLE,
+    TXT_STARTING,
+    TXT_SAMPLE_FMT,          // "Amostra: %d/10" / "Muestra: %d/10" / "Sample: %d/10"
+    TXT_TEST_DONE,
+    TXT_TEST_OK_10,
+
+	  TXT_MENU_ITEM_DATETIME,
+	    TXT_MENU_ITEM_ACQ,
+	    TXT_MENU_ITEM_LANGUAGE,
+	    TXT_MENU_ITEM_TEST,
+
+	    TXT_MENU_FOOTER_MAIN,
+
+	    TXT_MENU_DATETIME_TITLE,
+	    TXT_MENU_DATETIME_CANCEL,
+	    TXT_MENU_DATETIME_SAVE,
+
+		// USB menu (transferir/cancelar)
+		TXT_USB_MENU_TRANSFER,
+		TXT_USB_MENU_CANCEL,
+		TXT_USB_MENU_TRANSFER_SEL,
+		TXT_USB_MENU_CANCEL_SEL,
+
+		// Data/hora editor messages
+		TXT_DATETIME_SAVED,
+		TXT_DATETIME_CANCELED,
+
+	    TXT_MENU_ACQ_TITLE,
+	    TXT_MENU_ACQ_FOOTER,
+
+	    TXT_MENU_ACQ_SAVED,
+		// Tela principal (UpdateDisplay)
+		TXT_MAIN_LINE2_FMT,
+		TXT_MAIN_LINE3_FMT,
+		TXT_MAIN_LINE4_FMT,
+
+
+
+		TXT_CLEAR_TITLE,
+		TXT_CLEAR_QUESTION,
+		TXT_CLEAR_NO,
+		TXT_CLEAR_YES,
+		TXT_CLEAR_DONE,
+		TXT_MENU_ITEM_CLEAR_DATA,
+		TXT_CLEAR_ERASING,
+		TXT_CLEAR_FOOTER,
+
+	    TXT_MENU_LANG_TITLE,
+		TXT_MENU_LANG_LINE1,
+	    TXT_MENU_LANG_FOOTER,
+	    TXT_MENU_LANG_SAVED
+
+
+
+    // menu / config strings used in main (if any)
+} TextId_t;
+
+// Define no main.c: extern uint8_t current_language;
+const char* I18N(TextId_t id, uint8_t lang);
+
+#endif

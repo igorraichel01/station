@@ -1,0 +1,9 @@
+../Core/Src/data_buffer.c:13:6:Buffer_Init	1
+../Core/Src/data_buffer.c:19:6:Buffer_AddSample	2
+../Core/Src/data_buffer.c:30:9:Buffer_IsFull	1
+../Core/Src/data_buffer.c:34:6:Buffer_SaveToFlash	5
+../Core/Src/data_buffer.c:61:6:Buffer_Clear	1
+../Core/Src/data_buffer.c:65:10:Buffer_GetTotalSamples	1
+../Core/Src/data_buffer.c:69:10:Buffer_GetFlashCapacity	1
+../Core/Src/data_buffer.c:73:7:Buffer_GetFlashUsagePercent	1
+../Core/Src/data_buffer.c:77:6:Buffer_EraseFlash	1

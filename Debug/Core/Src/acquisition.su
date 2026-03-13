@@ -1,0 +1,6 @@
+../Core/Src/acquisition.c:38:6:Acquisition_Init	16	static
+../Core/Src/acquisition.c:45:6:Acquisition_IsTimeToSave	24	static
+../Core/Src/acquisition.c:60:6:Acquisition_UpdateNextTime	24	static
+../Core/Src/acquisition.c:73:6:Acquisition_SetInterval	16	static
+../Core/Src/acquisition.c:85:10:Acquisition_GetIntervalMs	16	static
+../Core/Src/acquisition.c:92:13:Acquisition_GetIntervalString	16	static

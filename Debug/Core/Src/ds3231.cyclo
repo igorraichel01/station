@@ -1,0 +1,6 @@
+../Core/Src/ds3231.c:22:16:BCD2DEC	1
+../Core/Src/ds3231.c:27:16:DEC2BCD	1
+../Core/Src/ds3231.c:32:6:DS3231_Init	2
+../Core/Src/ds3231.c:42:6:DS3231_SetTime	2
+../Core/Src/ds3231.c:60:6:DS3231_GetTime	2
+../Core/Src/ds3231.c:77:7:DS3231_GetTemperature	2

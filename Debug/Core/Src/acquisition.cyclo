@@ -1,0 +1,6 @@
+../Core/Src/acquisition.c:38:6:Acquisition_Init	1
+../Core/Src/acquisition.c:45:6:Acquisition_IsTimeToSave	3
+../Core/Src/acquisition.c:60:6:Acquisition_UpdateNextTime	2
+../Core/Src/acquisition.c:73:6:Acquisition_SetInterval	2
+../Core/Src/acquisition.c:85:10:Acquisition_GetIntervalMs	2
+../Core/Src/acquisition.c:92:13:Acquisition_GetIntervalString	2

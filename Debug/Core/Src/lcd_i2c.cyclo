@@ -1,0 +1,11 @@
+../Core/Src/lcd_i2c.c:13:6:LCD_Init	1
+../Core/Src/lcd_i2c.c:50:6:LCD_Clear	1
+../Core/Src/lcd_i2c.c:55:6:LCD_SetCursor	2
+../Core/Src/lcd_i2c.c:63:6:LCD_Print	2
+../Core/Src/lcd_i2c.c:69:6:LCD_Printf	1
+../Core/Src/lcd_i2c.c:78:6:LCD_Backlight	2
+../Core/Src/lcd_i2c.c:88:6:LCD_Write4Bits	1
+../Core/Src/lcd_i2c.c:93:6:LCD_SendCommand	1
+../Core/Src/lcd_i2c.c:100:6:LCD_SendData	1
+../Core/Src/lcd_i2c.c:107:6:LCD_ExpanderWrite	1
+../Core/Src/lcd_i2c.c:112:6:LCD_PulseEnable	1
