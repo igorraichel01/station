@@ -50,10 +50,11 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Middlewares/Third_Party/FatFs/src/diskio.h \
  ../Middlewares/Third_Party/FatFs/src/ff.h ../FATFS/Target/usbh_diskio.h \
  ../USB_HOST/App/usb_host.h ../Core/Inc/i18n.h ../Core/Inc/menu.h \
- ../Core/Inc/lcd_i2c.h ../Core/Inc/ds3231.h ../Core/Inc/data_buffer.h \
- ../Core/Inc/w25qxx.h ../Core/Inc/main.h ../Core/Inc/bmp180.h \
- ../Core/Inc/dht11.h ../Core/Inc/ds3231.h ../Core/Inc/lcd_i2c.h \
- ../Core/Inc/usb_datalogger.h ../Core/Inc/w25qxx.h ../Core/Inc/menu.h
+ ../Core/Inc/lcd_i2c.h ../Core/Inc/ds3231.h ../Core/Inc/pad20.h \
+ ../Core/Inc/data_buffer.h ../Core/Inc/w25qxx.h ../Core/Inc/main.h \
+ ../Core/Inc/bmp180.h ../Core/Inc/dht11.h ../Core/Inc/ds3231.h \
+ ../Core/Inc/lcd_i2c.h ../Core/Inc/usb_datalogger.h ../Core/Inc/w25qxx.h \
+ ../Core/Inc/menu.h
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
 ../Core/Inc/stm32f4xx_hal_conf.h:
@@ -113,6 +114,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Inc/menu.h:
 ../Core/Inc/lcd_i2c.h:
 ../Core/Inc/ds3231.h:
+../Core/Inc/pad20.h:
 ../Core/Inc/data_buffer.h:
 ../Core/Inc/w25qxx.h:
 ../Core/Inc/main.h:

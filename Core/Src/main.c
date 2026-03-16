@@ -11,6 +11,7 @@
 #include "fatfs.h"
 #include "usb_host.h"
 #include "i18n.h"
+#include "pad20.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -25,6 +26,7 @@
 #include <math.h>
 #include "menu.h"
 #include "usbh_core.h"
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -34,20 +36,21 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define LOCAL_ALTITUDE_M  11.0f
+
 
 // ✅ Config setor (4KB) - NÃO usar erase+1byte
 #define CONFIG_SECTOR_ADDRESS   0x3FF000u
 //#define W25Q_LOG_STATE_ADDR (W25Q32_CAPACITY - 1*W25Q32_SECTOR_SIZE) // 0x3FF000
 #define CONFIG_ACQ_OFFSET       0u
 #define CONFIG_LANG_OFFSET      4u
-
+#define CONFIG_ALT_OFFSET       8u   // int16_t (2 bytes). usa 8..9
 #define BATTERY_ADC_CHANNEL ADC_CHANNEL_7    // Ajuste para PA7, ADC1_IN7
 #define BATTERY_VREF 3.3f
 #define BATTERY_ADC_MAX 4095.0f
 #define BATTERY_VOLTAGE_DIVIDER 2.0f   // Divisor 10k/10k = metade
 #define BATTERY_FULL    4.2f
 #define BATTERY_EMPTY   3.0f
+#define DEFAULT_ALTITUDE_M  11
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -92,6 +95,7 @@ extern ApplicationTypeDef Appli_state;
 
 // ✅ idioma atual (persistido na flash)
 uint8_t current_language = LANG_PT;
+int16_t current_altitude_m = DEFAULT_ALTITUDE_M;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -108,6 +112,7 @@ void MX_USB_HOST_Process(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+
 void float_to_string(char *str, float value, uint8_t decimal_places) {
     int int_part = (int)value;
     int dec_part = (int)((value - int_part) * 100);
@@ -119,6 +124,7 @@ void float_to_string(char *str, float value, uint8_t decimal_places) {
         sprintf(str, "%d.%02d", int_part, dec_part);
     }
 }
+
 
 float CalculateSeaLevelPressure(float pressure_hpa, float altitude_m) {
     return pressure_hpa + (altitude_m / 8.3f);
@@ -137,32 +143,38 @@ void UpdateDisplay(DS3231_Time_t *time, float temp, float press_abs, float press
     // ===== Linha 2 =====
     LCD_SetCursor(&lcd, 0, 1);
     float_to_string(value_str, temp, 1);
+
     snprintf(buffer, sizeof(buffer), I18N(TXT_MAIN_LINE2_FMT, current_language),
              value_str, humidity, battery_percent);
-    while (strlen(buffer) < 20) strcat(buffer, " ");
-    buffer[20] = '\0';
+   // while (strlen(buffer) < 20) strcat(buffer, " ");
+   // buffer[20] = '\0';
+    Pad20(buffer, sizeof(buffer));
     LCD_Print(&lcd, buffer);
 
     // ===== Linha 3 =====
-    LCD_SetCursor(&lcd, 0, 2);
-    char sea_str[12];
-    char abs_str[12];
-    float_to_string(sea_str, press_sea, 1);
-    float_to_string(abs_str, press_abs, 1);
-    snprintf(buffer, sizeof(buffer), I18N(TXT_MAIN_LINE3_FMT, current_language),
-             sea_str, abs_str);
-    while (strlen(buffer) < 20) strcat(buffer, " ");
-    buffer[20] = '\0';
-    LCD_Print(&lcd, buffer);
 
-    // ===== Linha 4 =====
-    LCD_SetCursor(&lcd, 0, 3);
-    snprintf(buffer, sizeof(buffer), I18N(TXT_MAIN_LINE4_FMT, current_language),
-             (unsigned long)total_samples_saved,
-             acq_time_options[current_acq_time].display_text);
-    while (strlen(buffer) < 20) strcat(buffer, " ");
-    buffer[20] = '\0';
-    LCD_Print(&lcd, buffer);
+    LCD_SetCursor(&lcd, 0, 2);
+        char sea_str[12];
+        char abs_str[12];
+        float_to_string(sea_str, press_sea, 1);
+        float_to_string(abs_str, press_abs, 1);
+        snprintf(buffer, sizeof(buffer), I18N(TXT_MAIN_LINE3_FMT, current_language),
+                 sea_str, abs_str);
+       // while (strlen(buffer) < 20) strcat(buffer, " ");
+      //  buffer[20] = '\0';
+        Pad20(buffer, sizeof(buffer));
+        LCD_Print(&lcd, buffer);
+
+        // ===== Linha 4 =====
+        LCD_SetCursor(&lcd, 0, 3);
+        snprintf(buffer, sizeof(buffer), I18N(TXT_MAIN_LINE4_FMT, current_language),
+                 (unsigned long)total_samples_saved,
+                 acq_time_options[current_acq_time].display_text);
+        Pad20(buffer, sizeof(buffer));
+       // while (strlen(buffer) < 20) strcat(buffer, " ");
+      //  buffer[20] = '\0';
+        LCD_Print(&lcd, buffer);
+
 
 }
 
@@ -203,6 +215,34 @@ uint8_t LoadLanguageFromFlash(void) {
     }
     return lang;
 }
+
+void SaveAltitudeToFlash(int16_t alt_m)
+{
+    if (alt_m < 0) alt_m = 0;
+    if (alt_m > 5000) alt_m = 5000;
+
+    uint8_t buf[W25Q32_SECTOR_SIZE];
+    ConfigSector_Read(buf);
+
+    memcpy(&buf[CONFIG_ALT_OFFSET], &alt_m, sizeof(alt_m));
+
+    ConfigSector_Write(buf);
+}
+
+int16_t LoadAltitudeFromFlash(void)
+{
+    uint8_t buf[W25Q32_SECTOR_SIZE];
+    ConfigSector_Read(buf);
+
+    int16_t alt_m;
+    memcpy(&alt_m, &buf[CONFIG_ALT_OFFSET], sizeof(alt_m));
+
+    // se estiver "virgem" (0xFF 0xFF = -1) ou fora da faixa
+    if (alt_m < 0 || alt_m > 5000) return DEFAULT_ALTITUDE_M;
+    return alt_m;
+}
+
+
 
 // =========================
 // ✅ Aquisição na flash (sem apagar idioma)
@@ -313,20 +353,23 @@ void RunTestMode(void) {
 
         LCD_SetCursor(&lcd, 0, 1);
         snprintf(msg, sizeof(msg), I18N(TXT_SAMPLE_FMT, current_language), (int)(i + 1));
-        while (strlen(msg) < 20) strcat(msg, " ");
-        msg[20] = '\0';
+      //  while (strlen(msg) < 20) strcat(msg, " ");
+       // msg[20] = '\0';
+        Pad20(msg, sizeof(msg));
         LCD_Print(&lcd, msg);
 
         LCD_SetCursor(&lcd, 0, 2);
         snprintf(msg, sizeof(msg), "T: %.1fC P:%.1fhPa", temp, pressure);
-        while (strlen(msg) < 20) strcat(msg, " ");
-        msg[20] = '\0';
+       // while (strlen(msg) < 20) strcat(msg, " ");
+       // msg[20] = '\0';
+        Pad20(msg, sizeof(msg));
         LCD_Print(&lcd, msg);
 
         LCD_SetCursor(&lcd, 0, 3);
         snprintf(msg, sizeof(msg), "H:%d%% B:%d%% ", humidity, battery_percent);
-        while (strlen(msg) < 20) strcat(msg, " ");
-        msg[20] = '\0';
+       // while (strlen(msg) < 20) strcat(msg, " ");
+       // msg[20] = '\0';
+        Pad20(msg, sizeof(msg));
         LCD_Print(&lcd, msg);
     }
 
@@ -366,11 +409,12 @@ int main(void)
   LCD_SetCursor(&lcd, 0, 2); LCD_Print(&lcd, "       v1.0  ");
   HAL_Delay(2000);
 
-  LCD_Clear(&lcd); LCD_SetCursor(&lcd, 0, 0); LCD_Print(&lcd, "Init Flash W25Q32.. .");
+  LCD_Clear(&lcd); LCD_SetCursor(&lcd, 0, 0); LCD_Print(&lcd, " Init Flash W25Q32.. .");
   W25Q_Init(&flash, &hspi2, GPIOB, GPIO_PIN_12); HAL_Delay(50);
 
   // ✅ carrega idioma primeiro (usa setor config)
   current_language = LoadLanguageFromFlash();
+  current_altitude_m = LoadAltitudeFromFlash();
 
   // ✅ agora sim inicializa menu (pra pegar idioma atual)
   Menu_Init(&menu); HAL_Delay(1000);
@@ -408,9 +452,9 @@ int main(void)
   } else if (jedec_data[0] == 0xEF && jedec_data[2] == 0x15) {
       LCD_Print(&lcd, "W25Q16 OK!  (2MB)");
   } else if (jedec_data[0] == 0xEF) {
-      char msg[25]; sprintf(msg, "Winbond 0x%02X OK!   ", jedec_data[2]); LCD_Print(&lcd, msg);
+      char msg[25]; sprintf(msg, " Winbond 0x%02X OK!   ", jedec_data[2]); LCD_Print(&lcd, msg);
   } else {
-      char msg[25]; sprintf(msg, "Flash: %02X %02X %02X", jedec_data[0], jedec_data[1], jedec_data[2]); LCD_Print(&lcd, msg);
+      char msg[25]; sprintf(msg, " Flash: %02X %02X %02X", jedec_data[0], jedec_data[1], jedec_data[2]); LCD_Print(&lcd, msg);
   }
   HAL_Delay(2000);
 
@@ -478,8 +522,8 @@ int main(void)
 
   last_temp = temp;
   last_press_abs = pressure;
-  last_press_sea = CalculateSeaLevelPressure(pressure, LOCAL_ALTITUDE_M);
-
+ // last_press_sea = CalculateSeaLevelPressure(pressure, LOCAL_ALTITUDE_M);
+  last_press_sea = CalculateSeaLevelPressure(pressure, (float)current_altitude_m);
   DataSample_t sample;
   sample.temperature = temp;
   sample.pressure = pressure;
@@ -532,7 +576,8 @@ int main(void)
 
       last_temp = temp;
       last_press_abs = pressure;
-      last_press_sea = CalculateSeaLevelPressure(pressure, LOCAL_ALTITUDE_M);
+     // last_press_sea = CalculateSeaLevelPressure(pressure, LOCAL_ALTITUDE_M);
+      last_press_sea = CalculateSeaLevelPressure(pressure, (float)current_altitude_m);
 
       DataSample_t sample;
       sample.temperature = temp;
@@ -572,7 +617,8 @@ int main(void)
 
       last_temp = temp;
       last_press_abs = pressure;
-      last_press_sea = CalculateSeaLevelPressure(pressure, LOCAL_ALTITUDE_M);
+      //last_press_sea = CalculateSeaLevelPressure(pressure, LOCAL_ALTITUDE_M);
+      last_press_sea = CalculateSeaLevelPressure(pressure, (float)current_altitude_m);
     }
 
     USB_DataLogger_Process(&datalogger);

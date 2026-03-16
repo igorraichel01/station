@@ -4,6 +4,7 @@
 #include <string.h>
 #include "i18n.h"
 #include "w25qxx.h"
+#include "pad20.h"
 
 // Definições dos pinos dos botões
 #define BTN_SET_PIN    GPIO_PIN_0
@@ -15,7 +16,7 @@
 
 #define DEBOUNCE_TIME  40  // ms
 
-// ✅ DECLARAÇÕES EXTERNAS (ATUALIZADAS)
+// ✅ DECLARAÇÕES EXTERNAS
 extern AcquisitionTime_t current_acq_time;
 extern uint32_t acquisition_interval_ms;
 extern uint8_t current_language;
@@ -27,15 +28,15 @@ extern void SaveAcquisitionTimeToFlash(AcquisitionTime_t time);
 extern W25Q_t flash;
 extern uint32_t total_samples_saved;
 
+extern int16_t current_altitude_m;
+extern void SaveAltitudeToFlash(int16_t alt_m);
 
 extern void W25Q_TestReset(W25Q_t *flash);
 extern void W25Q_TestState_Save(W25Q_t *flash);
 
-// NOVO: precisa existir no driver
+// precisa existir no driver
 extern void W25Q_LogReset(W25Q_t *flash);
 extern void W25Q_LogState_Save(W25Q_t *flash);
-
-// ✅ Idioma (você vai definir no main.c)
 
 extern void SaveLanguageToFlash(uint8_t lang);
 
@@ -44,11 +45,15 @@ static void ShowMainMenu(Menu_t *menu, LCD_I2C_t *lcd);
 static void ShowDateTimeEditor(Menu_t *menu, LCD_I2C_t *lcd);
 static void ShowAcqEditor(Menu_t *menu, LCD_I2C_t *lcd);
 static void ShowLanguageEditor(Menu_t *menu, LCD_I2C_t *lcd);
+static void ShowAltitudeEditor(Menu_t *menu, LCD_I2C_t *lcd);
 
-static void ProcessMainMenu(Menu_t *menu, Button_t button, LCD_I2C_t *lcd, I2C_HandleTypeDef *hi2c, DS3231_Time_t *current_time);
-static void ProcessDateTimeEditor(Menu_t *menu, Button_t button, LCD_I2C_t *lcd, I2C_HandleTypeDef *hi2c);
+static void ProcessMainMenu(Menu_t *menu, Button_t button, LCD_I2C_t *lcd,
+                            I2C_HandleTypeDef *hi2c, DS3231_Time_t *current_time);
+static void ProcessDateTimeEditor(Menu_t *menu, Button_t button, LCD_I2C_t *lcd,
+                                  I2C_HandleTypeDef *hi2c);
 static void ProcessAcqEditor(Menu_t *menu, Button_t button, LCD_I2C_t *lcd);
 static void ProcessLanguageEditor(Menu_t *menu, Button_t button, LCD_I2C_t *lcd);
+static void ProcessAltitudeEditor(Menu_t *menu, Button_t button, LCD_I2C_t *lcd);
 
 static void ShowClearConfirm(Menu_t *menu, LCD_I2C_t *lcd);
 static void ProcessClearConfirm(Menu_t *menu, Button_t button, LCD_I2C_t *lcd);
@@ -75,27 +80,20 @@ void Menu_Init(Menu_t *menu) {
     menu->menu_scroll = 0;
     menu->confirm_selection = 0;
 
+    // ✅ altitude atual
+    menu->altitude_selection = current_altitude_m;
+
     // ✅ idioma atual
     menu->lang_selection = current_language;
     if (menu->lang_selection >= LANG_TOTAL) menu->lang_selection = LANG_PT;
 }
 
 Button_t Menu_ReadButtons(void) {
-    if (HAL_GPIO_ReadPin(BTN_PORT, BTN_SET_PIN) == GPIO_PIN_RESET) {
-        return BTN_SET;
-    }
-    if (HAL_GPIO_ReadPin(BTN_PORT, BTN_UP_PIN) == GPIO_PIN_RESET) {
-        return BTN_UP;
-    }
-    if (HAL_GPIO_ReadPin(BTN_PORT, BTN_DOWN_PIN) == GPIO_PIN_RESET) {
-        return BTN_DOWN;
-    }
-    if (HAL_GPIO_ReadPin(BTN_PORT, BTN_LEFT_PIN) == GPIO_PIN_RESET) {
-        return BTN_LEFT;
-    }
-    if (HAL_GPIO_ReadPin(BTN_PORT, BTN_RIGHT_PIN) == GPIO_PIN_RESET) {
-        return BTN_RIGHT;
-    }
+    if (HAL_GPIO_ReadPin(BTN_PORT, BTN_SET_PIN) == GPIO_PIN_RESET) return BTN_SET;
+    if (HAL_GPIO_ReadPin(BTN_PORT, BTN_UP_PIN) == GPIO_PIN_RESET) return BTN_UP;
+    if (HAL_GPIO_ReadPin(BTN_PORT, BTN_DOWN_PIN) == GPIO_PIN_RESET) return BTN_DOWN;
+    if (HAL_GPIO_ReadPin(BTN_PORT, BTN_LEFT_PIN) == GPIO_PIN_RESET) return BTN_LEFT;
+    if (HAL_GPIO_ReadPin(BTN_PORT, BTN_RIGHT_PIN) == GPIO_PIN_RESET) return BTN_RIGHT;
     return BTN_NONE;
 }
 
@@ -108,9 +106,7 @@ void Menu_Process(Menu_t *menu, LCD_I2C_t *lcd, I2C_HandleTypeDef *hi2c, DS3231_
 
     if (button != BTN_NONE) {
         uint32_t now = HAL_GetTick();
-        if ((now - menu->last_button_press) < DEBOUNCE_TIME) {
-            return;
-        }
+        if ((now - menu->last_button_press) < DEBOUNCE_TIME) return;
         menu->last_button_press = now;
     }
 
@@ -119,6 +115,7 @@ void Menu_Process(Menu_t *menu, LCD_I2C_t *lcd, I2C_HandleTypeDef *hi2c, DS3231_
             if (button == BTN_SET) {
                 menu->state = MENU_STATE_MAIN;
                 menu->menu_selection = 0;
+                menu->menu_scroll = 0;
                 LCD_Clear(lcd);
                 ShowMainMenu(menu, lcd);
             }
@@ -140,12 +137,19 @@ void Menu_Process(Menu_t *menu, LCD_I2C_t *lcd, I2C_HandleTypeDef *hi2c, DS3231_
             ProcessLanguageEditor(menu, button, lcd);
             break;
 
+        case MENU_STATE_CONFIG_ALTITUDE:
+            ProcessAltitudeEditor(menu, button, lcd);
+            break;
+
         case MENU_STATE_TEST_MODE:
-               // Será processado no main.c
-               break;
+            // Processado no main.c
+            break;
 
         case MENU_STATE_CLEAR_DATA_CONFIRM:
             ProcessClearConfirm(menu, button, lcd);
+            break;
+
+        default:
             break;
     }
 }
@@ -172,8 +176,7 @@ static void ProcessAcqEditor(Menu_t *menu, Button_t button, LCD_I2C_t *lcd) {
 
             LCD_Clear(lcd);
             LCD_SetCursor(lcd, 0, 1);
-            LCD_Print(lcd, I18N(TXT_MENU_ACQ_SAVED, current_language));
-
+            LCD_Print(lcd, (char*)I18N(TXT_MENU_ACQ_SAVED, current_language)); // (cast opcional)
             HAL_Delay(800);
 
             menu->state = MENU_STATE_IDLE;
@@ -191,44 +194,41 @@ static void ProcessAcqEditor(Menu_t *menu, Button_t button, LCD_I2C_t *lcd) {
     }
 }
 
-
+// Ordem do menu (0..5)
 static const TextId_t kMenuItems[MENU_TOTAL_ITEMS] = {
-    TXT_MENU_ITEM_DATETIME,
-    TXT_MENU_ITEM_ACQ,
-    TXT_MENU_ITEM_LANGUAGE,
-    TXT_MENU_ITEM_TEST,
-    TXT_MENU_ITEM_CLEAR_DATA
+    TXT_MENU_ITEM_DATETIME,     // 0
+    TXT_MENU_ITEM_ACQ,          // 1
+    TXT_MENU_ITEM_LANGUAGE,     // 2
+    TXT_MENU_ITEM_ALTITUDE,     // 3
+    TXT_MENU_ITEM_TEST,         // 4
+    TXT_MENU_ITEM_CLEAR_DATA    // 5
 };
+
 static void ShowClearConfirm(Menu_t *menu, LCD_I2C_t *lcd) {
     char line[21];
 
     LCD_SetCursor(lcd, 0, 0);
-    LCD_Print(lcd, I18N(TXT_CLEAR_TITLE, current_language));
+    LCD_Print(lcd, (char*)I18N(TXT_CLEAR_TITLE, current_language));
 
     LCD_SetCursor(lcd, 0, 1);
-    LCD_Print(lcd, I18N(TXT_CLEAR_QUESTION, current_language));
+    LCD_Print(lcd, (char*)I18N(TXT_CLEAR_QUESTION, current_language));
 
-    // Linha 2: "NAO      SIM" (com seleção)
     const char *no_s  = I18N(TXT_CLEAR_NO, current_language);
     const char *yes_s = I18N(TXT_CLEAR_YES, current_language);
 
-    // monta 20 colunas
-    // exemplo: "[NAO]     SIM" ou " NAO    [SIM]"
     if (menu->confirm_selection == 0) {
         snprintf(line, sizeof(line), "[%s]           %s", no_s, yes_s);
     } else {
         snprintf(line, sizeof(line), " %s           [%s]", no_s, yes_s);
     }
-    while (strlen(line) < 20) strcat(line, " ");
-    line[20] = '\0';
+    Pad20(line, sizeof(line));
 
     LCD_SetCursor(lcd, 0, 2);
     LCD_Print(lcd, line);
 
     LCD_SetCursor(lcd, 0, 3);
-    LCD_Print(lcd, I18N(TXT_CLEAR_FOOTER, current_language));
+    LCD_Print(lcd, (char*)I18N(TXT_CLEAR_FOOTER, current_language));
 }
-
 
 static void PrintMenuLine(LCD_I2C_t *lcd, uint8_t row, TextId_t id, uint8_t selected) {
     char line[21];
@@ -263,10 +263,6 @@ static void ShowMainMenu(Menu_t *menu, LCD_I2C_t *lcd) {
     }
 }
 
-
-
-
-
 static void ProcessClearConfirm(Menu_t *menu, Button_t button, LCD_I2C_t *lcd) {
     switch (button) {
         case BTN_LEFT:
@@ -284,20 +280,18 @@ static void ProcessClearConfirm(Menu_t *menu, Button_t button, LCD_I2C_t *lcd) {
                 return;
             }
 
-            // SIM: feedback na tela (3 idiomas via I18N)
             LCD_Clear(lcd);
             LCD_SetCursor(lcd, 0, 1);
-            LCD_Print(lcd, I18N(TXT_CLEAR_ERASING, current_language));
+            LCD_Print(lcd, (char*)I18N(TXT_CLEAR_ERASING, current_language));
             HAL_Delay(150);
 
-            // SIM: apaga NORMAL + TESTE (sem mexer em config)
-            W25Q_LogReset(&flash);   // deve salvar state preservando config
-            W25Q_TestReset(&flash);  // já salva o state de teste no seu driver
+            W25Q_LogReset(&flash);
+            W25Q_TestReset(&flash);
             total_samples_saved = 0;
 
             LCD_Clear(lcd);
             LCD_SetCursor(lcd, 0, 1);
-            LCD_Print(lcd, I18N(TXT_CLEAR_DONE, current_language));
+            LCD_Print(lcd, (char*)I18N(TXT_CLEAR_DONE, current_language));
             HAL_Delay(1200);
 
             menu->state = MENU_STATE_IDLE;
@@ -309,9 +303,8 @@ static void ProcessClearConfirm(Menu_t *menu, Button_t button, LCD_I2C_t *lcd) {
     }
 }
 
-
-
-static void ProcessMainMenu(Menu_t *menu, Button_t button, LCD_I2C_t *lcd, I2C_HandleTypeDef *hi2c, DS3231_Time_t *current_time) {
+static void ProcessMainMenu(Menu_t *menu, Button_t button, LCD_I2C_t *lcd,
+                            I2C_HandleTypeDef *hi2c, DS3231_Time_t *current_time) {
     switch(button) {
         case BTN_UP:
             if (menu->menu_selection > 0) {
@@ -324,10 +317,12 @@ static void ProcessMainMenu(Menu_t *menu, Button_t button, LCD_I2C_t *lcd, I2C_H
             if (menu->menu_selection + 1 < MENU_TOTAL_ITEMS) {
                 menu->menu_selection++;
                 ShowMainMenu(menu, lcd);
+
             }
             break;
 
         case BTN_SET:
+            // ✅ IMPORTANTE: aqui é onde estava o bug. Agora está 1:1 com kMenuItems[].
             if (menu->menu_selection == 0) {
                 menu->state = MENU_STATE_CONFIG_DATETIME;
                 menu->edit_field = FIELD_YEAR;
@@ -349,16 +344,21 @@ static void ProcessMainMenu(Menu_t *menu, Button_t button, LCD_I2C_t *lcd, I2C_H
                 ShowLanguageEditor(menu, lcd);
 
             } else if (menu->menu_selection == 3) {
+                menu->state = MENU_STATE_CONFIG_ALTITUDE;
+                menu->altitude_selection = current_altitude_m;
+                LCD_Clear(lcd);
+                ShowAltitudeEditor(menu, lcd);
+
+            } else if (menu->menu_selection == 4) {
                 menu->state = MENU_STATE_TEST_MODE;
                 LCD_Clear(lcd);
-            }
-            else if (menu->menu_selection == 4) {
+
+            } else if (menu->menu_selection == 5) {
                 menu->state = MENU_STATE_CLEAR_DATA_CONFIRM;
-                menu->confirm_selection = 0; // começa em NÃO
+                menu->confirm_selection = 0;
                 LCD_Clear(lcd);
                 ShowClearConfirm(menu, lcd);
             }
-
             break;
 
         case BTN_LEFT:
@@ -374,20 +374,19 @@ static void ProcessMainMenu(Menu_t *menu, Button_t button, LCD_I2C_t *lcd, I2C_H
 
 static void ShowLanguageEditor(Menu_t *menu, LCD_I2C_t *lcd) {
     LCD_SetCursor(lcd, 0, 0);
-    LCD_Print(lcd, I18N(TXT_MENU_LANG_TITLE, current_language));
+    LCD_Print(lcd, (char*)I18N(TXT_MENU_LANG_TITLE, current_language));
 
     LCD_SetCursor(lcd, 0, 1);
-    LCD_Print(lcd, I18N(TXT_MENU_LANG_LINE1, current_language));
+    LCD_Print(lcd, (char*)I18N(TXT_MENU_LANG_LINE1, current_language));
 
     LCD_SetCursor(lcd, 0, 2);
     char line[21];
     snprintf(line, sizeof(line), "    [ %s ]", LangToStr(menu->lang_selection));
-    while (strlen(line) < 20) strcat(line, " ");
-    line[20] = '\0';
+    Pad20(line, sizeof(line));
     LCD_Print(lcd, line);
 
     LCD_SetCursor(lcd, 0, 3);
-    LCD_Print(lcd, I18N(TXT_MENU_LANG_FOOTER, current_language));
+    LCD_Print(lcd, (char*)I18N(TXT_MENU_LANG_FOOTER, current_language));
 }
 
 static void ProcessLanguageEditor(Menu_t *menu, Button_t button, LCD_I2C_t *lcd) {
@@ -412,7 +411,63 @@ static void ProcessLanguageEditor(Menu_t *menu, Button_t button, LCD_I2C_t *lcd)
 
             LCD_Clear(lcd);
             LCD_SetCursor(lcd, 0, 1);
-            LCD_Print(lcd, I18N(TXT_MENU_LANG_SAVED, current_language));
+            LCD_Print(lcd, (char*)I18N(TXT_MENU_LANG_SAVED, current_language));
+            HAL_Delay(800);
+
+            menu->state = MENU_STATE_IDLE;
+            LCD_Clear(lcd);
+            break;
+
+        case BTN_LEFT:
+        case BTN_RIGHT:
+            menu->state = MENU_STATE_IDLE;
+            LCD_Clear(lcd);
+            break;
+
+        default:
+            break;
+    }
+}
+
+static void ShowAltitudeEditor(Menu_t *menu, LCD_I2C_t *lcd)
+{
+    char line[21];
+
+    LCD_SetCursor(lcd, 0, 0);
+    LCD_Print(lcd, (char*)I18N(TXT_MENU_ALT_TITLE, current_language));
+
+    LCD_SetCursor(lcd, 0, 1);
+    LCD_Print(lcd, (char*)I18N(TXT_MENU_ALT_LINE1, current_language));
+
+    snprintf(line, sizeof(line), " ALT: %4dm", (int)menu->altitude_selection);
+    Pad20(line, sizeof(line));
+    LCD_SetCursor(lcd, 0, 2);
+    LCD_Print(lcd, line);
+
+    LCD_SetCursor(lcd, 0, 3);
+    LCD_Print(lcd, (char*)I18N(TXT_MENU_ALT_FOOTER, current_language));
+}
+
+static void ProcessAltitudeEditor(Menu_t *menu, Button_t button, LCD_I2C_t *lcd)
+{
+    switch (button) {
+        case BTN_UP:
+            if (menu->altitude_selection < 5000) menu->altitude_selection++;
+            ShowAltitudeEditor(menu, lcd);
+            break;
+
+        case BTN_DOWN:
+            if (menu->altitude_selection > 0) menu->altitude_selection--;
+            ShowAltitudeEditor(menu, lcd);
+            break;
+
+        case BTN_SET:
+            current_altitude_m = menu->altitude_selection;
+            SaveAltitudeToFlash(current_altitude_m);
+
+            LCD_Clear(lcd);
+            LCD_SetCursor(lcd, 0, 1);
+            LCD_Print(lcd, (char*)I18N(TXT_MENU_ALT_SAVED, current_language));
             HAL_Delay(800);
 
             menu->state = MENU_STATE_IDLE;
@@ -437,9 +492,9 @@ static void ShowDateTimeEditor(Menu_t *menu, LCD_I2C_t *lcd) {
     char line3[21];
 
     LCD_SetCursor(lcd, 0, 0);
-   // LCD_Print(lcd, "Config Data/Hora:     ");
-    LCD_Print(lcd, I18N(TXT_MENU_DATETIME_TITLE, current_language));
+    LCD_Print(lcd, (char*)I18N(TXT_MENU_DATETIME_TITLE, current_language));
 
+    // ===== line1 (data)
     line1[0] = '\0';
 
     if (menu->edit_field == FIELD_YEAR) sprintf(buffer, "[%04d]", menu->temp_time.year);
@@ -454,12 +509,11 @@ static void ShowDateTimeEditor(Menu_t *menu, LCD_I2C_t *lcd) {
     else                               sprintf(buffer, " %02d ", menu->temp_time.date);
     strcat(line1, buffer);
 
-    while(strlen(line1) < 20) strcat(line1, " ");
-    line1[20] = '\0';
-
+    Pad20(line1, sizeof(line1));
     LCD_SetCursor(lcd, 0, 1);
     LCD_Print(lcd, line1);
 
+    // ===== line2 (hora)
     line2[0] = '\0';
 
     if (menu->edit_field == FIELD_HOUR) sprintf(buffer, "[%02d]", menu->temp_time.hours);
@@ -474,42 +528,37 @@ static void ShowDateTimeEditor(Menu_t *menu, LCD_I2C_t *lcd) {
     else                                  sprintf(buffer, " %02d ", menu->temp_time.seconds);
     strcat(line2, buffer);
 
-    while(strlen(line2) < 20) strcat(line2, " ");
-    line2[20] = '\0';
-
+    Pad20(line2, sizeof(line2));
     LCD_SetCursor(lcd, 0, 2);
     LCD_Print(lcd, line2);
-    line3[0] = '\0';
 
-    // Monta " SAIR      SALVAR " (com [] dependendo do campo)
+    // ===== line3 (sair/salvar)
+    line3[0] = '\0';
     char left[8], right[10];
+
     snprintf(left, sizeof(left), "%s", I18N(TXT_MENU_DATETIME_CANCEL, current_language));
     snprintf(right, sizeof(right), "%s", I18N(TXT_MENU_DATETIME_SAVE, current_language));
 
     if (menu->edit_field == FIELD_EXIT) {
-        snprintf(line3, sizeof(line3), "[%s]     %s", left + 1, right); // left tem espaço inicial
+        snprintf(line3, sizeof(line3), "[%s]     %s", left + 1, right);
     } else if (menu->edit_field == FIELD_DONE) {
-        snprintf(line3, sizeof(line3), " %s    [%s]", left + 1, right + 1); // right tem espaço inicial
+        snprintf(line3, sizeof(line3), " %s    [%s]", left + 1, right + 1);
     } else {
         snprintf(line3, sizeof(line3), " %s     %s", left + 1, right);
     }
-    while (strlen(line3) < 20) strcat(line3, " ");
-    line3[20] = '\0';
 
+    Pad20(line3, sizeof(line3));
     LCD_SetCursor(lcd, 0, 3);
     LCD_Print(lcd, line3);
-
 }
 
 static void ShowAcqEditor(Menu_t *menu, LCD_I2C_t *lcd) {
     char buffer[25];
 
-    if (menu->acq_selection >= ACQ_TOTAL_OPTIONS) {
-        menu->acq_selection = 0;
-    }
+    if (menu->acq_selection >= ACQ_TOTAL_OPTIONS) menu->acq_selection = 0;
 
     LCD_SetCursor(lcd, 0, 0);
-    LCD_Print(lcd, I18N(TXT_MENU_ACQ_TITLE, current_language));
+    LCD_Print(lcd, (char*)I18N(TXT_MENU_ACQ_TITLE, current_language));
 
     LCD_SetCursor(lcd, 0, 2);
     sprintf(buffer, "      [ %s ]         ", acq_time_options[menu->acq_selection].display_text);
@@ -517,10 +566,12 @@ static void ShowAcqEditor(Menu_t *menu, LCD_I2C_t *lcd) {
     LCD_Print(lcd, buffer);
 
     LCD_SetCursor(lcd, 0, 3);
-    LCD_Print(lcd, I18N(TXT_MENU_ACQ_FOOTER, current_language));
+    LCD_Print(lcd, (char*)I18N(TXT_MENU_ACQ_FOOTER, current_language));
 }
 
 static void ProcessDateTimeEditor(Menu_t *menu, Button_t button, LCD_I2C_t *lcd, I2C_HandleTypeDef *hi2c) {
+    (void)hi2c;
+
     switch(button) {
         case BTN_UP:
             if (menu->edit_field < FIELD_EXIT) {
@@ -551,10 +602,11 @@ static void ProcessDateTimeEditor(Menu_t *menu, Button_t button, LCD_I2C_t *lcd,
             break;
 
         case BTN_SET:
+            // (mantive seu comportamento original; se você quiser salvar RTC aqui, a gente ajusta)
             if (menu->edit_field == FIELD_EXIT) {
                 LCD_Clear(lcd);
                 LCD_SetCursor(lcd, 0, 1);
-                LCD_Print(lcd, I18N(TXT_DATETIME_CANCELED, current_language));
+                LCD_Print(lcd, (char*)I18N(TXT_DATETIME_CANCELED, current_language));
                 HAL_Delay(800);
                 menu->state = MENU_STATE_IDLE;
                 LCD_Clear(lcd);
@@ -562,7 +614,7 @@ static void ProcessDateTimeEditor(Menu_t *menu, Button_t button, LCD_I2C_t *lcd,
                 DS3231_SetTime(hi2c, &menu->temp_time);
                 LCD_Clear(lcd);
                 LCD_SetCursor(lcd, 0, 1);
-                LCD_Print(lcd, I18N(TXT_DATETIME_SAVED, current_language));
+                LCD_Print(lcd, (char*)I18N(TXT_DATETIME_SAVED, current_language));
                 HAL_Delay(1000);
                 menu->state = MENU_STATE_IDLE;
                 LCD_Clear(lcd);

@@ -5,7 +5,7 @@
 #include "lcd_i2c.h"
 #include "ds3231.h"
 #include <stdbool.h>
-#define MENU_TOTAL_ITEMS 5
+#define MENU_TOTAL_ITEMS 6
 typedef enum {
     MENU_STATE_IDLE = 0,
     MENU_STATE_MAIN,
@@ -13,7 +13,9 @@ typedef enum {
     MENU_STATE_CONFIG_ACQ,
     MENU_STATE_TEST_MODE,
     MENU_STATE_CONFIG_LANGUAGE,     // ✅ novo
-	 MENU_STATE_CLEAR_DATA_CONFIRM
+	MENU_STATE_CLEAR_DATA_CONFIRM,
+	MENU_STATE_CONFIG_ALTITUDE
+
 
 } MenuState_t;
 
@@ -57,6 +59,7 @@ typedef struct {
     uint8_t clear_selection;
     uint8_t confirm_selection;
     uint8_t menu_scroll;
+    int16_t altitude_selection;
 } Menu_t;
 
 void Menu_Init(Menu_t *menu);

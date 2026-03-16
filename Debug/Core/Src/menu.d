@@ -36,7 +36,7 @@ Core/Src/menu.o: ../Core/Src/menu.c ../Core/Inc/menu.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_ll_usb.h \
  ../Core/Inc/lcd_i2c.h ../Core/Inc/ds3231.h ../Core/Inc/main.h \
  ../Core/Inc/i18n.h ../Core/Inc/menu.h ../Core/Inc/w25qxx.h \
- ../Core/Inc/main.h
+ ../Core/Inc/main.h ../Core/Inc/pad20.h
 ../Core/Inc/menu.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
 ../Core/Inc/stm32f4xx_hal_conf.h:
@@ -80,3 +80,4 @@ Core/Src/menu.o: ../Core/Src/menu.c ../Core/Inc/menu.h \
 ../Core/Inc/menu.h:
 ../Core/Inc/w25qxx.h:
 ../Core/Inc/main.h:
+../Core/Inc/pad20.h:
