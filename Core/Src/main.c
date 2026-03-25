@@ -140,6 +140,8 @@ void UpdateDisplay(DS3231_Time_t *time, float temp, float press_abs, float press
     buffer[20] = '\0';
     LCD_Print(&lcd, buffer);
 
+
+
     // ===== Linha 2 =====
     LCD_SetCursor(&lcd, 0, 1);
     float_to_string(value_str, temp, 1);
@@ -147,9 +149,25 @@ void UpdateDisplay(DS3231_Time_t *time, float temp, float press_abs, float press
     snprintf(buffer, sizeof(buffer), I18N(TXT_MAIN_LINE2_FMT, current_language),
              value_str, humidity, battery_percent);
    // while (strlen(buffer) < 20) strcat(buffer, " ");
+
    // buffer[20] = '\0';
-    Pad20(buffer, sizeof(buffer));
-    LCD_Print(&lcd, buffer);
+    // Agora vamos imprimir: "T:<temp>" + "°C" + " resto"
+    LCD_Print(&lcd, "T:");
+    LCD_Print(&lcd, value_str);
+    LCD_SendData(&lcd, 0);     // ° (slot 0)
+    LCD_Print(&lcd, "C");
+
+    // imprime o resto: pega a string pronta e pula o começo "T:<temp>"
+    size_t prefix_len = 2 + strlen(value_str); // "T:" + tempStr
+    LCD_Print(&lcd, buffer + prefix_len);
+
+    // completa até 20 colunas
+    // (mais simples: pad no buffer original e depois reimprime tudo não dá, então preenche espaço na mão)
+    int used = 2 + (int)strlen(value_str) + 2 + (int)strlen(buffer + prefix_len); // +2 = ° + C
+    while (used < 20) { LCD_SendData(&lcd, ' '); used++; }
+
+
+
 
     // ===== Linha 3 =====
 
@@ -358,12 +376,36 @@ void RunTestMode(void) {
         Pad20(msg, sizeof(msg));
         LCD_Print(&lcd, msg);
 
-        LCD_SetCursor(&lcd, 0, 2);
+      /*  LCD_SetCursor(&lcd, 0, 2);
         snprintf(msg, sizeof(msg), "T: %.1fC P:%.1fhPa", temp, pressure);
        // while (strlen(msg) < 20) strcat(msg, " ");
        // msg[20] = '\0';
         Pad20(msg, sizeof(msg));
-        LCD_Print(&lcd, msg);
+        LCD_Print(&lcd, msg);*/
+
+
+        LCD_SetCursor(&lcd, 0, 2);
+
+        char left[25];
+        char right[25];
+
+        snprintf(left, sizeof(left), "T:%.1f", temp);
+        snprintf(right, sizeof(right), "C P:%.1fhPa", pressure);
+
+        // imprime "T: 25.3"
+        LCD_Print(&lcd, left);
+
+        // imprime o char custom (slot 0)
+        LCD_SendData(&lcd, 0);   // <-- esse é o "°"
+
+        // imprime "C P:1013.2hPa"
+        LCD_Print(&lcd, right);
+
+        // completa com espaços até 20 colunas (opcional)
+        char line[25];
+        snprintf(line, sizeof(line), "%s", ""); // só pra usar Pad20 se você quiser em uma linha única
+
+
 
         LCD_SetCursor(&lcd, 0, 3);
         snprintf(msg, sizeof(msg), "H:%d%% B:%d%% ", humidity, battery_percent);
@@ -402,6 +444,23 @@ int main(void)
 
   // LCD / RTC init inicial
   LCD_Init(&lcd, &hi2c1, 20, 4); LCD_Clear(&lcd); LCD_Backlight(&lcd, 1);
+  // Grau "°" (5x8). Ajuste se quiser mais redondo.
+  static const uint8_t DEGREE_CHAR[8] = {
+      0b00110,
+      0b01001,
+      0b01001,
+      0b00110,
+      0b00000,
+      0b00000,
+      0b00000,
+      0b00000
+  };
+
+
+  LCD_CreateChar(&lcd, 0, DEGREE_CHAR); // salva no slot 0
+
+
+
   DS3231_Init(&hi2c1);
 
   LCD_SetCursor(&lcd, 0, 0); LCD_Print(&lcd, "    <  CIDEPE  >  ");
@@ -409,7 +468,7 @@ int main(void)
   LCD_SetCursor(&lcd, 0, 2); LCD_Print(&lcd, "       v1.0  ");
   HAL_Delay(2000);
 
-  LCD_Clear(&lcd); LCD_SetCursor(&lcd, 0, 0); LCD_Print(&lcd, " Init Flash W25Q32.. .");
+  LCD_Clear(&lcd); LCD_SetCursor(&lcd, 0, 0); LCD_Print(&lcd, "Init Flash W25Q32...");
   W25Q_Init(&flash, &hspi2, GPIOB, GPIO_PIN_12); HAL_Delay(50);
 
   // ✅ carrega idioma primeiro (usa setor config)

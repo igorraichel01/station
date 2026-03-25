@@ -73,5 +73,7 @@ void LCD_SendCommand(LCD_I2C_t *lcd, uint8_t cmd);
 void LCD_SendData(LCD_I2C_t *lcd, uint8_t data);
 void LCD_ExpanderWrite(LCD_I2C_t *lcd, uint8_t data);
 void LCD_PulseEnable(LCD_I2C_t *lcd, uint8_t data);
+void LCD_CreateChar(LCD_I2C_t *lcd, uint8_t location, const uint8_t charmap[8]);
+void LCD_WriteChar(LCD_I2C_t *lcd, uint8_t ch);
 
 #endif

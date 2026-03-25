@@ -9,3 +9,5 @@
 ../Core/Src/lcd_i2c.c:100:6:LCD_SendData	1
 ../Core/Src/lcd_i2c.c:107:6:LCD_ExpanderWrite	1
 ../Core/Src/lcd_i2c.c:112:6:LCD_PulseEnable	1
+../Core/Src/lcd_i2c.c:121:6:LCD_WriteChar	1
+../Core/Src/lcd_i2c.c:126:6:LCD_CreateChar	2

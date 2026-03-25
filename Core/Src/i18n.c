@@ -62,14 +62,14 @@ const char* I18N(TextId_t id, uint8_t lang) {
                                        "=== MODO TESTE ===   ";
 
         case TXT_TEST_MODE_SUBTITLE:
-            return (lang == LANG_ES) ? "10 muestras x 5s     " :
-                   (lang == LANG_EN) ? "10 samples x 5s      " :
-                                       "10 amostras x 5s     ";
+            return (lang == LANG_ES) ? " 10 muestras x 5s    " :
+                   (lang == LANG_EN) ? " 10 samples x 5s     " :
+                                       " 10 amostras x 5s    ";
 
         case TXT_STARTING:
-            return (lang == LANG_ES) ? "Iniciando...         " :
-                   (lang == LANG_EN) ? "Starting...          " :
-                                       "Iniciando...         ";
+            return (lang == LANG_ES) ? " Iniciando...        " :
+                   (lang == LANG_EN) ? " Starting...         " :
+                                       " Iniciando...        ";
 
         case TXT_TEST_DONE:
             return (lang == LANG_ES) ? "  Prueba Finalizada! " :
@@ -114,9 +114,9 @@ const char* I18N(TextId_t id, uint8_t lang) {
 
             // ===== MENU DATA/HORA =====
         case TXT_MENU_DATETIME_TITLE:
-                return (lang == LANG_ES) ? "Config Fecha/Hora:   " :
-                       (lang == LANG_EN) ? "Set Date/Time:       " :
-                                           "Config Data/Hora:    ";
+                return (lang == LANG_ES) ? " Config Fecha/Hora: " :
+                       (lang == LANG_EN) ? " Set Date/Time:     " :
+                                           " Config Data/Hora:   ";
 
         case TXT_MENU_DATETIME_CANCEL:
                 return (lang == LANG_ES) ? " SALIR" :
@@ -130,9 +130,9 @@ const char* I18N(TextId_t id, uint8_t lang) {
 
             // ===== MENU AQUISICAO =====
         case TXT_MENU_ACQ_TITLE:
-                return (lang == LANG_ES) ? "Tiempo Adquisicion:  " :
-                       (lang == LANG_EN) ? "Acquisition Time:    " :
-                                           "Tempo de Aquisicao:  ";
+                return (lang == LANG_ES) ? " Tiempo Adquisicion: " :
+                       (lang == LANG_EN) ? " Acquisition Time:   " :
+                                           " Tempo de Aquisicao: ";
 
 
        case TXT_MENU_ACQ_SAVED:
@@ -142,9 +142,9 @@ const char* I18N(TextId_t id, uint8_t lang) {
 
             // ===== MENU IDIOMA =====
        case TXT_MENU_LANG_TITLE:
-                return (lang == LANG_ES) ? "Config Idioma:       " :
-                       (lang == LANG_EN) ? "Set Language:        " :
-                                           "Config Idioma:       ";
+                return (lang == LANG_ES) ? " Config Idioma:      " :
+                       (lang == LANG_EN) ? " Set Language:       " :
+                                           " Config Idioma:      ";
 
        case TXT_MENU_LANG_FOOTER:
                 return (lang == LANG_ES) ? "SET=GUARDAR <- SALIR " :
@@ -178,7 +178,7 @@ const char* I18N(TextId_t id, uint8_t lang) {
             // Mensagens do editor de Data/Hora
        case TXT_DATETIME_SAVED:
                 return (lang == LANG_ES) ? "  Fecha/Hora OK!    " :
-                       (lang == LANG_EN) ? " Date/Time Saved!   " :
+                       (lang == LANG_EN) ? "  Date/Time Saved!  " :
                                            "  Data/Hora Salva!  ";
 
        case TXT_DATETIME_CANCELED:
@@ -201,16 +201,17 @@ const char* I18N(TextId_t id, uint8_t lang) {
        case TXT_MAIN_LINE2_FMT:
                 // T, H, B (temperatura, umidade, bateria)
                 // args: tempStr, humidity(int), battery(int)
-                return (lang == LANG_ES) ? "T:%sC H:%d%% B:%d%%" :
-                       (lang == LANG_EN) ? "T:%sC H:%d%% B:%d%%" :
-                                           "T:%sC H:%d%% B:%d%%";
+    	   // args: tempStr, humidity(int), battery(int)
+    	     return (lang == LANG_ES) ? "T:%s H:%d%% B:%d%%" :
+    	            (lang == LANG_EN) ? "T:%s H:%d%% B:%d%%" :
+    	                                "T:%s H:%d%% B:%d%%";
 
        case TXT_MAIN_LINE3_FMT:
                 // P (pressao ao nivel do mar) e A (absoluta)
                 // args: seaStr, absStr
-                return (lang == LANG_ES) ? "P:%s A:%s" :
-                       (lang == LANG_EN) ? "P:%s A:%s" :
-                                           "P:%s A:%s";
+                return (lang == LANG_ES) ? "P:%s A:%shPa" :
+                       (lang == LANG_EN) ? "P:%s A:%shPa" :
+                                           "P:%s A:%shPa";
 
        case TXT_MAIN_LINE4_FMT:
                 // “F” hoje é seu contador total_samples_saved + modo (30m/1h)
@@ -241,9 +242,9 @@ const char* I18N(TextId_t id, uint8_t lang) {
                                            "  DS3231 OK!         ";
 
        case TXT_BOOT_RTC_ERR:
-                return (lang == LANG_ES) ? "Error DS3231!        " :
-                       (lang == LANG_EN) ? "DS3231 Error!        " :
-                                           "Erro DS3231!         ";
+                return (lang == LANG_ES) ? " Error DS3231!       " :
+                       (lang == LANG_EN) ? " DS3231 Error!       " :
+                                           " Erro DS3231!        ";
 
        case TXT_BOOT_INIT_BMP:
                 return (lang == LANG_ES) ? "  Init BMP180...     " :
@@ -318,9 +319,9 @@ const char* I18N(TextId_t id, uint8_t lang) {
                                     "> Config Altitude   ";
 
      case TXT_MENU_ALT_TITLE:
-         return (lang == LANG_ES) ? "Configurar Altitud   " :
-                (lang == LANG_EN) ? "Set Altitude         " :
-                                    "Configurar Altitude  ";
+         return (lang == LANG_ES) ? " Configurar Altitud  " :
+                (lang == LANG_EN) ? " Set Altitude        " :
+                                    " Configurar Altitude ";
 
      case TXT_MENU_ALT_LINE1:
          return (lang == LANG_ES) ? "Use UP/DOWN ajustar  " :

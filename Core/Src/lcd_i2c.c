@@ -115,3 +115,19 @@ void LCD_PulseEnable(LCD_I2C_t *lcd, uint8_t data) {
     LCD_ExpanderWrite(lcd, data & ~En);
     HAL_Delay(1);
 }
+
+// Coloque perto das outras funções públicas
+
+void LCD_WriteChar(LCD_I2C_t *lcd, uint8_t ch) {
+    LCD_SendData(lcd, ch);
+}
+
+// location: 0..7 (CGRAM tem 8 slots)
+void LCD_CreateChar(LCD_I2C_t *lcd, uint8_t location, const uint8_t charmap[8]) {
+    location &= 0x07;
+    LCD_SendCommand(lcd, 0x40 | (location << 3));  // SETCGRAMADDR
+
+    for (int i = 0; i < 8; i++) {
+        LCD_SendData(lcd, charmap[i]);
+    }
+}
