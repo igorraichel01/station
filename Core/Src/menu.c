@@ -60,6 +60,8 @@ static void ProcessClearConfirm(Menu_t *menu, Button_t button, LCD_I2C_t *lcd);
 
 static void IncrementField(Menu_t *menu);
 static void DecrementField(Menu_t *menu);
+static void UpdateLanguageValueLine(Menu_t *menu, LCD_I2C_t *lcd);
+static void UpdateAltitudeValueLine(Menu_t *menu, LCD_I2C_t *lcd); // se você fez também
 
 static const char* LangToStr(uint8_t lang) {
     switch (lang) {
@@ -372,36 +374,35 @@ static void ProcessMainMenu(Menu_t *menu, Button_t button, LCD_I2C_t *lcd,
     }
 }
 
-static void ShowLanguageEditor(Menu_t *menu, LCD_I2C_t *lcd) {
+static void ShowLanguageEditor(Menu_t *menu, LCD_I2C_t *lcd)
+{
     LCD_SetCursor(lcd, 0, 0);
     LCD_Print(lcd, (char*)I18N(TXT_MENU_LANG_TITLE, current_language));
 
     LCD_SetCursor(lcd, 0, 1);
     LCD_Print(lcd, (char*)I18N(TXT_MENU_LANG_LINE1, current_language));
 
-    LCD_SetCursor(lcd, 0, 2);
-    char line[21];
-    snprintf(line, sizeof(line), "    [ %s ]", LangToStr(menu->lang_selection));
-    Pad20(line, sizeof(line));
-    LCD_Print(lcd, line);
+    UpdateLanguageValueLine(menu, lcd);   // <-- só linha 2
 
     LCD_SetCursor(lcd, 0, 3);
     LCD_Print(lcd, (char*)I18N(TXT_MENU_LANG_FOOTER, current_language));
 }
+
+
 
 static void ProcessLanguageEditor(Menu_t *menu, Button_t button, LCD_I2C_t *lcd) {
     switch(button) {
         case BTN_UP:
             if (menu->lang_selection > 0) {
                 menu->lang_selection--;
-                ShowLanguageEditor(menu, lcd);
+                UpdateLanguageValueLine(menu, lcd);
             }
             break;
 
         case BTN_DOWN:
             if (menu->lang_selection + 1 < LANG_TOTAL) {
                 menu->lang_selection++;
-                ShowLanguageEditor(menu, lcd);
+                UpdateLanguageValueLine(menu, lcd);
             }
             break;
 
@@ -428,8 +429,41 @@ static void ProcessLanguageEditor(Menu_t *menu, Button_t button, LCD_I2C_t *lcd)
             break;
     }
 }
+static void UpdateAltitudeValueLine(Menu_t *menu, LCD_I2C_t *lcd)
+{
+    char line[21];
+    snprintf(line, sizeof(line), " ALT: %4dm", (int)menu->altitude_selection);
+    Pad20(line, sizeof(line));
+    LCD_SetCursor(lcd, 0, 2);
+    LCD_Print(lcd, line);
+}
+
+
 
 static void ShowAltitudeEditor(Menu_t *menu, LCD_I2C_t *lcd)
+{
+    LCD_SetCursor(lcd, 0, 0);
+    LCD_Print(lcd, (char*)I18N(TXT_MENU_ALT_TITLE, current_language));
+
+    LCD_SetCursor(lcd, 0, 1);
+    LCD_Print(lcd, (char*)I18N(TXT_MENU_ALT_LINE1, current_language));
+
+    UpdateAltitudeValueLine(menu, lcd);   // <-- só linha 2
+
+    LCD_SetCursor(lcd, 0, 3);
+    LCD_Print(lcd, (char*)I18N(TXT_MENU_ALT_FOOTER, current_language));
+}
+
+static void UpdateLanguageValueLine(Menu_t *menu, LCD_I2C_t *lcd)
+{
+    char line[21];
+    snprintf(line, sizeof(line), "    [ %s ]", LangToStr(menu->lang_selection));
+    Pad20(line, sizeof(line));
+    LCD_SetCursor(lcd, 0, 2);
+    LCD_Print(lcd, line);
+}
+
+/*static void ShowAltitudeEditor(Menu_t *menu, LCD_I2C_t *lcd)
 {
     char line[21];
 
@@ -447,19 +481,20 @@ static void ShowAltitudeEditor(Menu_t *menu, LCD_I2C_t *lcd)
     LCD_SetCursor(lcd, 0, 3);
     LCD_Print(lcd, (char*)I18N(TXT_MENU_ALT_FOOTER, current_language));
 }
-
+*/
 static void ProcessAltitudeEditor(Menu_t *menu, Button_t button, LCD_I2C_t *lcd)
 {
     switch (button) {
+
         case BTN_UP:
             if (menu->altitude_selection < 5000) menu->altitude_selection++;
-            ShowAltitudeEditor(menu, lcd);
-            break;
+                  UpdateAltitudeValueLine(menu, lcd);
+           break;
 
         case BTN_DOWN:
-            if (menu->altitude_selection > 0) menu->altitude_selection--;
-            ShowAltitudeEditor(menu, lcd);
-            break;
+             if (menu->altitude_selection > 0) menu->altitude_selection--;
+                  UpdateAltitudeValueLine(menu, lcd);
+          break;
 
         case BTN_SET:
             current_altitude_m = menu->altitude_selection;

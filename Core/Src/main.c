@@ -130,6 +130,33 @@ float CalculateSeaLevelPressure(float pressure_hpa, float altitude_m) {
     return pressure_hpa + (altitude_m / 8.3f);
 }
 
+static void RTC_ApplyDefaultIfInvalid(void)
+{
+    DS3231_Time_t t;
+    DS3231_GetTime(&hi2c1, &t);
+
+    int invalid =
+        (t.year < 2024 || t.year > 2099) ||
+        (t.month < 1 || t.month > 12) ||
+        (t.date < 1 || t.date > 31) ||
+        (t.hours > 23) || (t.minutes > 59) || (t.seconds > 59);
+
+    if (invalid) {
+        DS3231_Time_t def = {0};
+        def.date = 15;
+        def.month = 6;
+        def.year = 2026;
+        def.hours = 0;
+        def.minutes = 0;
+        def.seconds = 0;
+
+        DS3231_SetTime(&hi2c1, &def);
+
+        // opcional, mas recomendado: já atualiza o que vai para o display
+        rtc_time = def;
+    }
+}
+
 void UpdateDisplay(DS3231_Time_t *time, float temp, float press_abs, float press_sea, uint8_t humidity, uint8_t battery_percent, USB_State_t usb_state) {
     char buffer[25];
     char value_str[12];
@@ -463,6 +490,8 @@ int main(void)
 
   DS3231_Init(&hi2c1);
 
+
+
   LCD_SetCursor(&lcd, 0, 0); LCD_Print(&lcd, "    <  CIDEPE  >  ");
   LCD_SetCursor(&lcd, 0, 1); LCD_Print(&lcd, "       EQ410A   ");
   LCD_SetCursor(&lcd, 0, 2); LCD_Print(&lcd, "       v1.0  ");
@@ -472,6 +501,7 @@ int main(void)
   W25Q_Init(&flash, &hspi2, GPIOB, GPIO_PIN_12); HAL_Delay(50);
 
   // ✅ carrega idioma primeiro (usa setor config)
+
   current_language = LoadLanguageFromFlash();
   current_altitude_m = LoadAltitudeFromFlash();
 
@@ -538,8 +568,10 @@ int main(void)
 	  LCD_SetCursor(&lcd, 0, 1); LCD_Print(&lcd, I18N(TXT_BOOT_RTC_ERR, current_language));
     HAL_Delay(1000);
   } else {
-	  LCD_SetCursor(&lcd, 0, 1); LCD_Print(&lcd, I18N(TXT_BOOT_RTC_OK, current_language));
+	  LCD_SetCursor(&lcd, 0, 1);
+	  LCD_Print(&lcd, I18N(TXT_BOOT_RTC_OK, current_language));
     HAL_Delay(1000);
+    RTC_ApplyDefaultIfInvalid();
   }
 
   LCD_SetCursor(&lcd, 0, 2); LCD_Print(&lcd, I18N(TXT_BOOT_INIT_BMP, current_language));

@@ -108,9 +108,9 @@ const char* I18N(TextId_t id, uint8_t lang) {
                                            "> Executar Teste     ";
 
         case TXT_MENU_FOOTER_MAIN:
-                return (lang == LANG_ES) ? "SET=OK  UP/DOWN=Mov  " :
-                       (lang == LANG_EN) ? "SET=OK  UP/DOWN=Move " :
-                                           "SET=OK  UP/DOWN=Mov  ";
+                return (lang == LANG_ES) ? " SET=OK  UP/DOWN=Mov " :
+                       (lang == LANG_EN) ? " SET=OK  UP/DOWN=Move" :
+                                           " SET=OK  UP/DOWN=Mov ";
 
             // ===== MENU DATA/HORA =====
         case TXT_MENU_DATETIME_TITLE:
@@ -188,8 +188,8 @@ const char* I18N(TextId_t id, uint8_t lang) {
 
 
        case TXT_MENU_ACQ_FOOTER:
-                return (lang == LANG_ES) ? "UP/DOWN SET=GUARDAR  " :
-                       (lang == LANG_EN) ? "UP/DOWN SET=SAVE     " :
+                return (lang == LANG_ES) ? "UP/DOWN  SET=GUARDAR " :
+                       (lang == LANG_EN) ? "UP/DOWN  SET=SAVE    " :
                                            "UP/DOWN  SET=SALVAR  ";
 
 
@@ -291,12 +291,12 @@ const char* I18N(TextId_t id, uint8_t lang) {
                                            "Apagar NORMAL+TEST?  ";
 
       case TXT_CLEAR_NO:
-                return (lang == LANG_ES) ? "NAO" :
-                       (lang == LANG_EN) ? "NO"  :
-                                           "NAO";
+                return (lang == LANG_ES) ? " NO" :
+                       (lang == LANG_EN) ? " NO"  :
+                                           " NAO";
 
       case TXT_CLEAR_YES:
-                return (lang == LANG_ES) ? "SIM" :
+                return (lang == LANG_ES) ? "SI" :
                        (lang == LANG_EN) ? "YES" :
                                            "SIM";
 
@@ -305,14 +305,14 @@ const char* I18N(TextId_t id, uint8_t lang) {
                        (lang == LANG_EN) ? "   Done!             " :
                                            "   Pronto!           ";
       case TXT_CLEAR_ERASING:
-                return (lang == LANG_ES) ? "Borrando...          " :
-                       (lang == LANG_EN) ? "Erasing...           " :
-                                           "Apagando...          ";
+                return (lang == LANG_ES) ? " Borrando...         " :
+                       (lang == LANG_EN) ? " Erasing...          " :
+                                           " Apagando...         ";
 
      case TXT_CLEAR_FOOTER:
-                return (lang == LANG_ES) ? "SET=OK  <- Cancelar  " :
-                       (lang == LANG_EN) ? "SET=OK  <- Cancel    " :
-                                           "SET=OK  <- Cancelar  ";
+                return (lang == LANG_ES) ? " SET=OK  <- Cancelar " :
+                       (lang == LANG_EN) ? " SET=OK  <- Cancel   " :
+                                           " SET=OK  <- Cancelar ";
      case TXT_MENU_ITEM_ALTITUDE:
          return (lang == LANG_ES) ? "> Config Altitud    " :
                 (lang == LANG_EN) ? "> Set Altitude      " :
@@ -329,9 +329,9 @@ const char* I18N(TextId_t id, uint8_t lang) {
                                     "Use UP/DOWN ajustar  ";
 
      case TXT_MENU_ALT_FOOTER:
-         return (lang == LANG_ES) ? "SET=Guardar  LR=Salir" :
-                (lang == LANG_EN) ? "SET=Save   LR=Exit   " :
-                                    "SET=Salvar  LR=Sair  ";
+         return (lang == LANG_ES) ? "SET=Guardar LR=Salir " :
+                (lang == LANG_EN) ? " SET=Save   LR=Exit  " :
+                                    " SET=Salvar  LR=Sair ";
 
      case TXT_MENU_ALT_SAVED:
          return (lang == LANG_ES) ? " Altitud guardada!   " :
